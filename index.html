@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <script src="https://cdn.jsdelivr.net/npm/vega@6.2.0"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vega-lite@6.4.1"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vega-embed@7.1.0"></script>
+</head>
+<body>
+  <div id="vis"></div>
+  <script>
+    const spec = {
+      "$schema": "https://vega.github.io/schema/vega-lite/v6.json",
+      "title": "Covid-19 Dashboard",
+      "data": {"url": "data/data.csv"},
+      "hconcat": [
+        {
+          "vconcat": [
+            {
+              "width": 600,
+              "height": 400,
+              "data": {
+                "url": "geo/europe.topojson", 
+                "format": {
+                  "type": "topojson", 
+                  "feature": "europe"
+                }
+              },
+              "transform": [
+                {
+                  "lookup": "id",
+                  "from": {
+                    "data": {"url": "data/data.csv"},
+                    "key": "country_code",
+                    "fields": ["country", "country_code", "new_cases", "year_week"]
+                  }
+                },
+              ],
+              "mark": {
+                "type": "geoshape",
+                "stroke": "#eeeeee",
+                "strokeWidth": 0.5
+              },
+              "params": [{
+                  "name": "countrySel",
+                  "select": {
+                    "type": "point",
+                    "fields": ["country_code"]
+                  },
+                  "value": [{"country_code": "AT"}]
+              }],
+              "encoding": {
+                "color": {
+                    "field": "new_cases",
+                    "type": "quantitative",
+                    "scale": {"scheme": "blues"},
+                    "title": "New Cases"
+                },
+                  "tooltip": [
+                    {"field": "country", "type": "nominal", "title": "Country"},
+                    {"field": "new_cases", "type": "quantitative", "title": "New Cases"},
+                    {"field": "year_week", "type": "temporal", "timeUnit": "yearweek", "title": "Year-Week"}
+                  ]
+                }
+            },
+            {
+              "transform": [{
+                "filter": {
+                  "param": "countrySel",
+                  "empty": false
+                }
+              }],
+              "encoding": {
+                "x": {
+                  "field": "year_week",
+                  "type": "temporal",
+                  "timeUnit": "yearweek",
+                  "title": "Year-Week",
+                  "axis": {
+                    "format": "%Y-%W",
+                    "tickCount": "quarter",
+                    "labelAngle": 45 
+                  }
+                },
+                "y": {
+                  "title": "New Cases",
+                  "field": "new_cases",
+                  "type": "quantitative"
+                },
+                "tooltip": [
+                  {"field": "country_code", "type": "nominal", "title": "Country"},
+                  {"field": "year_week", "type": "temporal", "title": "Year-Week", "format": "%Y-%W"},
+                  {"field": "new_cases", "type": "quantitative", "title": "New Cases"}
+                ]
+              },
+              "width": 600,
+              "height": 300,
+              "mark": "line",
+              "params": [
+                {"name": "timeSel", "select": {"type": "interval", "encodings": ["x"]}}
+              ]
+            }
+          ]
+        },
+        {
+          "vconcat": [
+            {
+              "transform": [{
+                "filter": {
+                  "param": "countrySel",
+                  "empty": false
+                }
+              }],
+              "encoding": {
+                "x": {
+                  "field": "year_week",
+                  "type": "temporal",
+                  "timeUnit": "yearweek",
+                  "title": "Year-Week",
+                  "axis": {
+                    "format": "%Y-%W",
+                    "tickCount": "quarter",
+                    "labelAngle": 45 
+                  }
+                },
+                "y": {
+                  "title": "Number Sequenced",
+                  "field": "number_sequenced",
+                  "type": "quantitative"
+                },
+                "tooltip": [
+                  {"field": "country_code", "type": "nominal", "title": "Country"},
+                  {"field": "year_week", "type": "temporal", "title": "Year-Week", "format": "%Y-%W"},
+                  {"field": "number_sequenced", "type": "quantitative", "title": "Number Sequenced"}
+                ]
+              },
+              "width": 600,
+              "height": 300,
+              "mark": "line",
+              "params": [
+                {"name": "timeSel", "select": {"type": "interval", "encodings": ["x"]}}
+              ]
+            },
+            {
+              "encoding": {
+                "color": {
+                  "field": "variant",
+                  "title": "Variant",
+                  "type": "nominal",
+                  "legend": {"orient": "bottom"}
+                },
+                "x": {
+                  "title": "Number of Detections",
+                  "field": "sum_detections_variant",
+                  "type": "quantitative"
+                },
+                "y": {"title": "Variant", "field": "variant"}
+              },
+              "width": 600,
+              "mark": "bar",
+              "params": [
+                {"name": "click", "select": {"type": "point", "encodings": ["color"]}}
+              ],
+              "transform": [
+                {"filter": {
+                  "param": "countrySel"
+                }},
+                {"filter": {"param": "timeSel"}},
+                {"filter": "datum.variant != 'UNK'"},
+                {
+                  "aggregate": [
+                    {
+                      "op": "sum",
+                      "field": "number_detections_variant",
+                      "as": "sum_detections_variant"
+                    }
+                  ],
+                  "groupby": ["variant"]
+                },
+                {"filter": "datum.sum_detections_variant > 0"}
+              ]
+            }
+          ]
+        }
+      ],
+      "config": {}
+    };
+    vegaEmbed("#vis", spec, {mode: "vega-lite"}).then(console.log).catch(console.warn);
+  </script>
+</body>
+</html>
