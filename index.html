@@ -4,15 +4,36 @@
   <script src="https://cdn.jsdelivr.net/npm/vega@6.2.0"></script>
   <script src="https://cdn.jsdelivr.net/npm/vega-lite@6.4.1"></script>
   <script src="https://cdn.jsdelivr.net/npm/vega-embed@7.1.0"></script>
+  <style>
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+    }
+
+    #vis {
+      width: 100%;
+      max-width: 1200px;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+  </style>
 </head>
 <body>
   <div id="vis"></div>
   <script>
     const spec = {
       "$schema": "https://vega.github.io/schema/vega-lite/v6.json",
-      "title": "Covid-19 Dashboard, Europe, Data from weeks 2020-01 to 2023-48",
-      "description": "An interactive dashboard showing Covid-19 data across Europe.",
+      "title": ["SARS-CoV-2 in the EU/EEA from weeks 2020-01 to 2023-47, as reported by the ECDC", ""],
       "data": {"url": "data/data.csv"},
+      "transform": [
+        {
+          "calculate": "timeParse(datum.year_week + '-1', '%Y-%W-%u')",
+          "as": "week_date"
+        }
+      ],
       "concat": [
         {
           "title": "Total Cases by Country",
@@ -70,9 +91,8 @@
           }],
           "encoding": {
             "x": {
-              "field": "year_week",
+              "field": "week_date",
               "type": "temporal",
-              "timeUnit": "yearweek",
               "title": "Year-Week",
               "axis": {
                 "format": "%Y-%W",
@@ -87,8 +107,8 @@
             },
             "tooltip": [
               {"field": "country_code", "type": "nominal", "title": "Country"},
-              {"field": "year_week", "type": "temporal", "title": "Year-Week", "format": "%Y-%W"},
-              {"field": "new_cases", "type": "quantitative", "title": "New Cases"}
+              {"field": "new_cases", "type": "quantitative", "title": "New Cases"},
+              {"field": "year_week", "type": "nominal", "title": "Year-Week"}
             ]
           },
           "title": "New Cases Over Time",
@@ -100,16 +120,37 @@
           ]
         },
         {
-          "transform": [{
-            "filter": {
-              "param": "countrySel"
+          "transform": [
+            {
+              "filter": {
+                "param": "countrySel"
+              }
+            },
+            {
+              "aggregate": [
+                {
+                  "op": "max",
+                  "field": "number_sequenced",
+                  "as": "number_sequenced_per_source"
+                }
+              ],
+              "groupby": ["country_code", "country", "year_week", "week_date", "source"]
+            },
+            {
+              "aggregate": [
+                {
+                  "op": "sum",
+                  "field": "number_sequenced_per_source",
+                  "as": "total_number_sequenced"
+                }
+              ],
+              "groupby": ["country_code", "country", "year_week", "week_date"]
             }
-          }],
+          ],
           "encoding": {
             "x": {
-              "field": "year_week",
+              "field": "week_date",
               "type": "temporal",
-              "timeUnit": "yearweek",
               "title": "Year-Week",
               "axis": {
                 "format": "%Y-%W",
@@ -119,13 +160,13 @@
             },
             "y": {
               "title": "Number Sequenced",
-              "field": "number_sequenced",
+              "field": "total_number_sequenced",
               "type": "quantitative"
             },
             "tooltip": [
               {"field": "country_code", "type": "nominal", "title": "Country"},
-              {"field": "year_week", "type": "temporal", "title": "Year-Week", "format": "%Y-%W"},
-              {"field": "number_sequenced", "type": "quantitative", "title": "Number Sequenced"}
+              {"field": "total_number_sequenced", "type": "quantitative", "title": "Number Sequenced"},
+              {"field": "year_week", "type": "nominal", "title": "Year-Week"}
             ]
           },
           "title": "Number Sequenced Over Time",
@@ -180,7 +221,10 @@
       ],
       "columns": 2,
       "config": {
-        "padding": {"left": 20, "top": 20, "right": 20, "bottom": 20}
+        "view": {"stroke": "transparent"},
+        "title": {
+          "fontSize": 14
+        }
       }
     };
     vegaEmbed("#vis", spec, {mode: "vega-lite"}).then(console.log).catch(console.warn);
