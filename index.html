@@ -10,11 +10,13 @@
   <script>
     const spec = {
       "$schema": "https://vega.github.io/schema/vega-lite/v6.json",
-      "title": "Covid-19 Dashboard",
+      "title": "Covid-19 Dashboard, Europe, Data from weeks 2020-01 to 2023-48",
+      "description": "An interactive dashboard showing Covid-19 data across Europe.",
       "data": {"url": "data/data.csv"},
-      "vconcat": [
+      "concat": [
         {
-          "width": 600,
+          "title": "Total Cases by Country",
+          "width": 400,
           "height": 400,
           "data": {
             "url": "geo/europe.topojson", 
@@ -29,7 +31,7 @@
               "from": {
                 "data": {"url": "data/data.csv"},
                 "key": "country_code",
-                "fields": ["country", "country_code", "new_cases", "year_week"]
+                "fields": ["country", "country_code", "total_cases"]
               }
             },
           ],
@@ -48,16 +50,15 @@
           }],
           "encoding": {
             "color": {
-                "field": "new_cases",
+                "field": "total_cases",
                 "type": "quantitative",
                 "scale": {"scheme": "blues"},
                 "title": "New Cases"
             },
               "tooltip": [
                 {"field": "country", "type": "nominal", "title": "Country"},
-                {"field": "new_cases", "type": "quantitative", "title": "New Cases"},
-                {"field": "year_week", "type": "temporal", "timeUnit": "yearweek", "title": "Year-Week"}
-              ]
+                {"field": "total_cases", "type": "quantitative", "title": "Total Cases", "format": ","},
+                ]
             }
         },
         {
@@ -90,7 +91,8 @@
               {"field": "new_cases", "type": "quantitative", "title": "New Cases"}
             ]
           },
-          "width": 600,
+          "title": "New Cases Over Time",
+          "width": 500,
           "height": 300,
           "mark": "line",
           "params": [
@@ -126,7 +128,8 @@
               {"field": "number_sequenced", "type": "quantitative", "title": "Number Sequenced"}
             ]
           },
-          "width": 600,
+          "title": "Number Sequenced Over Time",
+          "width": 500,
           "height": 300,
           "mark": "line",
           "params": [
@@ -139,7 +142,7 @@
               "field": "variant",
               "title": "Variant",
               "type": "nominal",
-              "legend": {"orient": "bottom"}
+              "legend": {"orient": "right"}
             },
             "x": {
               "title": "Number of Detections",
@@ -148,7 +151,9 @@
             },
             "y": {"title": "Variant", "field": "variant"}
           },
-          "width": 600,
+          "title": "Variant Distribution In Selected Time Range",
+          "width": 500,
+          "height": 300,
           "mark": "bar",
           "params": [
             {"name": "click", "select": {"type": "point", "encodings": ["color"]}}
@@ -173,7 +178,10 @@
           ]
         }
       ],
-      "config": {}
+      "columns": 2,
+      "config": {
+        "padding": {"left": 20, "top": 20, "right": 20, "bottom": 20}
+      }
     };
     vegaEmbed("#vis", spec, {mode: "vega-lite"}).then(console.log).catch(console.warn);
   </script>
